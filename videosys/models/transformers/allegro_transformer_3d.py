@@ -294,7 +294,10 @@ class AllegroTransformer3DModel(ModelMixin, ConfigMixin):
             `tuple` where the first element is the sample tensor.
         """
         batch_size, c, frame, h, w = hidden_states.shape
-
+        # hidden_states.shape : torch.Size([2, 4, 22, 90, 160])
+        #TODO cond latent feature and uncond latent feature through CFGCacheConfig
+        
+        
         # ensure attention_mask is a bias, and give it a singleton query_tokens dimension.
         #   we may have done this conversion already, e.g. if we came here via UNet2DConditionModel#forward.
         #   we can tell by counting dims; if ndim == 2: it's a mask rather than a bias.
@@ -369,7 +372,9 @@ class AllegroTransformer3DModel(ModelMixin, ConfigMixin):
                 height=height,
                 width=width,
             )  # b c t h w
-
+        #output.shape torch.Size([2, 4, 22, 90, 160])
+        #TODO compute the uncond latent feature
+        
         if not return_dict:
             return (output,)
 
