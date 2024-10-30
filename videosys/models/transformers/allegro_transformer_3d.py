@@ -25,7 +25,7 @@ from diffusers.models.embeddings import PixArtAlphaTextProjection
 from videosys.models.modules.allegro_modules.block import to_2tuple, BasicTransformerBlock, AdaLayerNormSingle
 from videosys.models.modules.allegro_modules.embedding import PatchEmbed2D
 from videosys.core.parallel_mgr import ParallelManager
-
+from videosys.core.cfgcache_mgr import if_use_cfgcache,fft
 from diffusers.utils import logging
 
 logger = logging.get_logger(__name__)
@@ -296,7 +296,9 @@ class AllegroTransformer3DModel(ModelMixin, ConfigMixin):
         batch_size, c, frame, h, w = hidden_states.shape
         # hidden_states.shape : torch.Size([2, 4, 22, 90, 160])
         #TODO cond latent feature and uncond latent feature through CFGCacheConfig
-        
+        use_cfgcache = if_use_cfgcache(timestep_noembed)
+        if use_cfgcache:
+            pass
         
         # ensure attention_mask is a bias, and give it a singleton query_tokens dimension.
         #   we may have done this conversion already, e.g. if we came here via UNet2DConditionModel#forward.

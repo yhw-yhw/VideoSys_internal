@@ -63,5 +63,5 @@ low quality, normal quality, jpeg artifacts, signature, watermark, username, blu
     engine.save_video(video, f"./outputs/test_with_pab.mp4")
 
 if __name__ == "__main__":
-    # run_base()
-    run_pab()
+    run_base()
+    # run_pab()

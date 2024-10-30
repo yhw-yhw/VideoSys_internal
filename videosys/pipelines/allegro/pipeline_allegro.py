@@ -40,6 +40,7 @@ logger = logging.get_logger(__name__)
 from videosys.models.transformers.allegro_transformer_3d import AllegroTransformer3DModel
 from videosys.models.autoencoders.autoencoder_kl_allegro import AllegroAutoencoderKL3D
 from videosys.core.pab_mgr import PABConfig,set_pab_manager,update_steps
+from videosys.core.cfgcache_mgr import CFGCacheConfig,set_cfgcache_manager
 
 EXAMPLE_DOC_STRING = """
     Examples:
@@ -65,6 +66,17 @@ class AllegroPABConfig(PABConfig):
             spatial_broadcast=spatial_broadcast,
             spatial_threshold=spatial_threshold,
             spatial_range=spatial_range,
+        )
+
+class AllegroCFGCacheConfig(CFGCacheConfig):
+    def __init__(
+        self,
+        threshold_l=0,
+        threshold_r=0
+    ):
+        super().__init__(
+            threshold_l=threshold_l,
+            threshold_r=threshold_r
         )
 
 
@@ -123,6 +135,9 @@ class AllegroConfig:
         # ======= pab ========
         enable_pab: bool = False,
         pab_config=AllegroPABConfig(),
+        # +++++++ cfg-cache +++++++
+        enable_cfgcache: bool = False,
+        cfgcache_config=AllegroCFGCacheConfig()
     ):
         self.model_path = model_path
         self.pipeline_cls = AllegroPipeline
@@ -134,6 +149,9 @@ class AllegroConfig:
         # ======= pab ========
         self.enable_pab = enable_pab
         self.pab_config = pab_config
+        # +++++++ CFG-cache +++++++
+        self.enable_cfgcache = enable_cfgcache
+        self.cfgcache_config = cfgcache_config
 
 
 class AllegroPipeline(VideoSysPipeline):
@@ -215,6 +233,11 @@ class AllegroPipeline(VideoSysPipeline):
             
         # parallel
         # self._set_parallel()
+        
+        #cfgcache
+        if config.enable_cfgcache:
+            set_cfgcache_manager(config.cfgcache_config)
+            
 
     def _set_parallel(
         self, dp_size: Optional[int] = None, sp_size: Optional[int] = None, enable_cp: Optional[bool] = False
