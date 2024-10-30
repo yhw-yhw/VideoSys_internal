@@ -3,7 +3,7 @@ bs4
 click
 colossalai
 contexttimer
-diffusers==0.30.0
+diffusers
 einops
 fabric
 ftfy
@@ -11,7 +11,7 @@ imageio
 imageio-ffmpeg
 matplotlib
 ninja
-numpy<2.0.0
+numpy
 omegaconf
 packaging
 psutil
@@ -23,4 +23,4 @@ sentencepiece
 timm
 torch>=1.13
 tqdm
-transformers==4.39.3
+transformers

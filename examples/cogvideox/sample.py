@@ -39,6 +39,6 @@ def run_low_mem():
 
 
 if __name__ == "__main__":
-    run_base()
-    # run_pab()
+    # run_base()
+    run_pab()
     # run_low_mem()

@@ -279,7 +279,7 @@ class CogVideoXBlock(nn.Module):
         norm_hidden_states, norm_encoder_hidden_states, gate_msa, enc_gate_msa = self.norm1(
             hidden_states, encoder_hidden_states, temb
         )
-
+        
         # attention
         if enable_pab():
             broadcast_attn, self.attn_count = if_broadcast_spatial(int(timestep[0]), self.attn_count)
