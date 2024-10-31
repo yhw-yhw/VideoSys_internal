@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 import torch
 import torch.nn.functional as F
 from diffusers.configuration_utils import ConfigMixin, register_to_config
-
+from videosys.utils.logging import logger
 
 from diffusers.models.modeling_utils import ModelMixin
 
@@ -25,7 +25,7 @@ from diffusers.models.embeddings import PixArtAlphaTextProjection
 from videosys.models.modules.allegro_modules.block import to_2tuple, BasicTransformerBlock, AdaLayerNormSingle
 from videosys.models.modules.allegro_modules.embedding import PatchEmbed2D
 from videosys.core.parallel_mgr import ParallelManager
-from videosys.core.cfgcache_mgr import if_use_cfgcache,fft
+from videosys.core.cfgcache_mgr import if_use_cfgcache,fft,enable_cfgcache,cfgcache_step,if_get_accelerated
 from diffusers.utils import logging
 
 logger = logging.get_logger(__name__)
@@ -222,6 +222,8 @@ class AllegroTransformer3DModel(ModelMixin, ConfigMixin):
             )
         
         self.gradient_checkpointing = False
+        self.delta_hf = None
+        self.delta_lf = None
 
     def _set_gradient_checkpointing(self, module, value=False):
         self.gradient_checkpointing = value
@@ -293,13 +295,19 @@ class AllegroTransformer3DModel(ModelMixin, ConfigMixin):
             If `return_dict` is True, an [`~models.transformer_2d.Transformer2DModelOutput`] is returned, otherwise a
             `tuple` where the first element is the sample tensor.
         """
-        batch_size, c, frame, h, w = hidden_states.shape
         # hidden_states.shape : torch.Size([2, 4, 22, 90, 160])
+        # encoder_hidden_states.shape : torch.Size([2, 1, 512, 4096])
+        # timestep.shape : torch.Size([2])
         #TODO cond latent feature and uncond latent feature through CFGCacheConfig
-        use_cfgcache = if_use_cfgcache(timestep_noembed)
-        if use_cfgcache:
-            pass
-        
+        if enable_cfgcache() and if_use_cfgcache(timestep_noembed) and if_get_accelerated():
+            print(f"{timestep_noembed} is going to speed up with cfg-cache")
+            cond_index = 1
+            hidden_states = hidden_states[cond_index].unsqueeze(0) #torch.Size([1, 4, 22, 90, 160])
+            encoder_hidden_states = encoder_hidden_states[cond_index].unsqueeze(0) #torch.Size([1, 1, 512, 4096])
+            timestep = timestep[cond_index].unsqueeze(0)
+            attention_mask = attention_mask[cond_index].unsqueeze(0)
+            encoder_attention_mask = encoder_attention_mask[cond_index].unsqueeze(0)
+        batch_size, c, frame, h, w = hidden_states.shape
         # ensure attention_mask is a bias, and give it a singleton query_tokens dimension.
         #   we may have done this conversion already, e.g. if we came here via UNet2DConditionModel#forward.
         #   we can tell by counting dims; if ndim == 2: it's a mask rather than a bias.
@@ -348,6 +356,13 @@ class AllegroTransformer3DModel(ModelMixin, ConfigMixin):
 
 
         for _, block in enumerate(self.transformer_blocks):
+            # print(hidden_states.shape,#torch.Size([1, 79200, 2304])
+            #     attention_mask_vid.shape,#torch.Size([1, 1, 79200])
+            #     encoder_hidden_states_vid.shape,#torch.Size([1, 512, 2304])
+            #     encoder_attention_mask_vid.shape,#torch.Size([1, 1, 512])
+            #     timestep_vid.shape#torch.Size([1, 13824])
+            #     )
+            
             hidden_states = block(
                 hidden_states,
                 attention_mask_vid,
@@ -376,10 +391,37 @@ class AllegroTransformer3DModel(ModelMixin, ConfigMixin):
             )  # b c t h w
         #output.shape torch.Size([2, 4, 22, 90, 160])
         #TODO compute the uncond latent feature
-        
+        if enable_cfgcache() and if_use_cfgcache(timestep_noembed):
+            if if_get_accelerated():
+                single_output=output
+                (bb, cc, tt, hh, ww) = single_output.shape
+                cond = rearrange(single_output, "B C T H W -> (B T) C H W", B=bb, C=cc, T=tt, H=hh, W=ww)
+                lf_c, hf_c = fft(cond.float())
+                
+                # if self.counter<=130:
+                self.delta_lf = self.delta_lf * 1.1
+                # elif self.counter>=100:
+                self.delta_hf = self.delta_hf * 1.2
+
+                new_hf_uc = self.delta_hf + hf_c
+                new_lf_uc = self.delta_lf + lf_c
+
+                combine_uc = new_lf_uc + new_hf_uc
+                combined_fft = torch.fft.ifftshift(combine_uc)
+                recovered_uncond = torch.fft.ifft2(combined_fft).real
+                recovered_uncond = rearrange(recovered_uncond.to(single_output.dtype), "(B T) C H W -> B C T H W", B=bb, C=cc, T=tt, H=hh, W=ww)
+                output = torch.cat([recovered_uncond,single_output],dim=0)
+            else:
+                (bb, cc, tt, hh, ww) = output.shape
+                cond = rearrange(output[1:2], "B C T H W -> (B T) C H W", B=bb//2, C=cc, T=tt, H=hh, W=ww)
+                uncond = rearrange(output[0:1], "B C T H W -> (B T) C H W", B=bb//2, C=cc, T=tt, H=hh, W=ww)
+                lf_c, hf_c = fft(cond.float())
+                lf_uc, hf_uc = fft(uncond.float())
+                self.delta_hf = hf_uc - hf_c
+                self.delta_lf = lf_uc - lf_c
+            cfgcache_step()
         if not return_dict:
             return (output,)
-
         return Transformer3DModelOutput(sample=output)
 
     def _operate_on_patched_inputs(self, hidden_states, encoder_hidden_states, timestep, added_cond_kwargs, batch_size):

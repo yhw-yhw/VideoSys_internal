@@ -1083,6 +1083,7 @@ class BasicTransformerBlock(nn.Module):
         elif self.use_layer_norm:
             norm_hidden_states = self.norm1(hidden_states)
         elif self.use_ada_layer_norm_single:
+            # print(timestep.reshape(batch_size, 6, -1).shape)
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
                 self.scale_shift_table[None] + timestep.reshape(batch_size, 6, -1)
             ).chunk(6, dim=1)

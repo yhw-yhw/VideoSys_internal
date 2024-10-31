@@ -71,12 +71,14 @@ class AllegroPABConfig(PABConfig):
 class AllegroCFGCacheConfig(CFGCacheConfig):
     def __init__(
         self,
-        threshold_l=0,
-        threshold_r=0
+        threshold_l=200,
+        threshold_r=800,
+        threshold_range=2
     ):
         super().__init__(
             threshold_l=threshold_l,
-            threshold_r=threshold_r
+            threshold_r=threshold_r,
+            threshold_range=threshold_range
         )
 
 

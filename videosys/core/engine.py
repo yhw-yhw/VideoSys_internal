@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 import torch
 import torch.distributed as dist
-
+import time
 import videosys
 
 from .mp_utils import ProcessWorkerWrapper, ResultHandler, WorkerMonitor, get_distributed_init_method, get_open_port
@@ -98,8 +98,10 @@ class VideoSysEngine:
         return self.driver_worker.generate(*args, **kwargs)
 
     def generate(self, *args, **kwargs):
-        return self._run_workers("generate", *args, **kwargs)[0]
-
+        start = time.time()
+        ret = self._run_workers("generate", *args, **kwargs)[0]
+        print(f"Generate Cost time : {time.time()-start}")
+        return ret
     def stop_remote_worker_execution_loop(self) -> None:
         if self.parallel_worker_tasks is None:
             return
