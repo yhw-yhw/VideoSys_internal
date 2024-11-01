@@ -80,10 +80,11 @@ if __name__ == "__main__":
     low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry.
     """
     execute_time = {
-    "base_time" : caculate_time(run_base,positive_prompt,negative_prompt),
-    "cfgcache_time" : caculate_time(run_cfgcache,positive_prompt,negative_prompt),
-    "pab_time" : caculate_time(run_pab,positive_prompt,negative_prompt),
-    "cfgcache_pab_time" : caculate_time(run_cfgcache_pab,positive_prompt,negative_prompt)
+        #only choose one method! The Global variations may cause bugs.
+    "base_time" : caculate_time(run_base,positive_prompt,negative_prompt), #645.3020467758179
+    # "cfgcache_time" : caculate_time(run_cfgcache,positive_prompt,negative_prompt), #579.5817785263062
+    # "pab_time" : caculate_time(run_pab,positive_prompt,negative_prompt), #558.1389479637146
+    # "cfgcache_pab_time" : caculate_time(run_cfgcache_pab,positive_prompt,negative_prompt) #496.5060832500458
     }
     
     print(execute_time)

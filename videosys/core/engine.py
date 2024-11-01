@@ -8,7 +8,7 @@ import time
 import videosys
 
 from .mp_utils import ProcessWorkerWrapper, ResultHandler, WorkerMonitor, get_distributed_init_method, get_open_port
-
+from onediffx import compile_pipe,OneflowCompileOptions
 
 class VideoSysEngine:
     """
@@ -67,8 +67,10 @@ class VideoSysEngine:
     # TODO: add more options here for pipeline, or wrap all options into config
     def _create_pipeline(self, pipeline_cls, rank=0, local_rank=0, distributed_init_method=None):
         videosys.initialize(rank=rank, world_size=self.config.num_gpus, init_method=distributed_init_method)
-
+        # compile_options = OneflowCompileOptions()
+        
         pipeline = pipeline_cls(self.config)
+        # pipeline = compile_pipe(pipeline,backend="oneflow", options=compile_options)
         return pipeline
 
     def _run_workers(

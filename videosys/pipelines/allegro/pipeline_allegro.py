@@ -22,6 +22,7 @@ import torch.distributed as dist
 from videosys.core.pipeline import VideoSysPipeline, VideoSysPipelineOutput
 from bs4 import BeautifulSoup
 from videosys.utils.utils import set_seed, save_video
+import time
 
 from diffusers import DiffusionPipeline
 from diffusers.schedulers import EulerAncestralDiscreteScheduler
@@ -239,7 +240,13 @@ class AllegroPipeline(VideoSysPipeline):
         #cfgcache
         if config.enable_cfgcache:
             set_cfgcache_manager(config.cfgcache_config)
-            
+        
+        #compile
+        # print("start to compile the vae")
+        # start = time.time()
+        # self.vae =torch.compile(self.vae)
+        # print(f"compile finished, cost time : {time.time()-start}")
+        
 
     def _set_parallel(
         self, dp_size: Optional[int] = None, sp_size: Optional[int] = None, enable_cp: Optional[bool] = False
