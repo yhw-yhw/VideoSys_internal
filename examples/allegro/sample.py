@@ -51,7 +51,7 @@ def run_cfgcache(positive_prompt,negative_prompt):
     engine.save_video(video, f"./outputs/test_cfgcache.mp4")
     
 def run_cfgcache_pab(positive_prompt,negative_prompt):
-    config = AllegroConfig("/data4/ryd_workspace/models/Allegro",num_gpus=1,enable_cfgcache=True,enable_pab=True)
+    config = AllegroConfig("/data4/ryd_workspace/models/Allegro",num_gpus=1,enable_cfgcache=True,enable_pab=True,config_file='./cfgcache_pab_config.yaml')
     engine = VideoSysEngine(config)
     video = engine.generate(
         prompt=positive_prompt,
@@ -81,10 +81,10 @@ if __name__ == "__main__":
     """
     execute_time = {
         #only choose one method! The Global variations may cause bugs.
-    "base_time" : caculate_time(run_base,positive_prompt,negative_prompt), #645.3020467758179
+    # "base_time" : caculate_time(run_base,positive_prompt,negative_prompt), #645.3020467758179
     # "cfgcache_time" : caculate_time(run_cfgcache,positive_prompt,negative_prompt), #579.5817785263062
     # "pab_time" : caculate_time(run_pab,positive_prompt,negative_prompt), #558.1389479637146
-    # "cfgcache_pab_time" : caculate_time(run_cfgcache_pab,positive_prompt,negative_prompt) #496.5060832500458
+    "cfgcache_pab_time" : caculate_time(run_cfgcache_pab,positive_prompt,negative_prompt) #496.5060832500458
     }
     
     print(execute_time)

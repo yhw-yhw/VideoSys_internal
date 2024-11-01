@@ -23,6 +23,7 @@ from videosys.core.pipeline import VideoSysPipeline, VideoSysPipelineOutput
 from bs4 import BeautifulSoup
 from videosys.utils.utils import set_seed, save_video
 import time
+import yaml
 
 from diffusers import DiffusionPipeline
 from diffusers.schedulers import EulerAncestralDiscreteScheduler
@@ -140,8 +141,21 @@ class AllegroConfig:
         pab_config=AllegroPABConfig(),
         # +++++++ cfg-cache +++++++
         enable_cfgcache: bool = False,
-        cfgcache_config=AllegroCFGCacheConfig()
+        cfgcache_config=AllegroCFGCacheConfig(),
+        config_file=None
     ):
+        if config_file !=None:
+            configs = yaml.safe_load(open(config_file,'r'))
+            pab_config = AllegroPABConfig(
+                spatial_broadcast = configs['pab']['spatial_broadcast'],
+                spatial_threshold = configs['pab']['spatial_threshold'],
+                spatial_range = configs['pab']['spatial_range']
+            )
+            cfgcache_config = AllegroCFGCacheConfig(
+                threshold_l = configs['cfgcache']['threshold_l'],
+                threshold_r = configs['cfgcache']['threshold_r'],
+                threshold_range = configs['cfgcache']['threshold_range']
+            )
         self.model_path = model_path
         self.pipeline_cls = AllegroPipeline
         # ======= distributed ========

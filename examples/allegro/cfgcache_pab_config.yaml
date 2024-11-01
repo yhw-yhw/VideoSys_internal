@@ -1,0 +1,8 @@
+cfgcache:
+  threshold_l: 500
+  threshold_r: 600
+  threshold_range: 2
+pab:
+  spatial_broadcast: True
+  spatial_threshold: [450, 850]
+  spatial_range: 2
